@@ -83,7 +83,6 @@ class RoverProblem(SearchProblem):
     # todas las coordenadas son en formato (fila, columna)
     def __init__(self, rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
 
-
         self.zonas_sombra = tuple(zonas_sombra)
 
         self.capacidad_maxima = 2
@@ -222,9 +221,3 @@ class RoverProblem(SearchProblem):
     # heuristic
     def heuristic(self, state):
         return null
-
-
-
-
-
-
