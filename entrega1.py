@@ -1,8 +1,8 @@
 import datetime
-from simpvenvleai.search import astar, SearchProblem
+from simpleai.search import astar, SearchProblem
 from simpleai.search.viewers import BaseViewer
 
-class RoverProblem(SearchProblem):
+class planear_rover(SearchProblem):
     '''
     Tenemos que almacenar en el estado la siguiente información: batería, posición del rover, carga, herramienta, muestras por recoger 
     (igneas y sedimentarias).
@@ -97,7 +97,7 @@ class RoverProblem(SearchProblem):
             tuple(muestras_sedimentarias),
         )
 
-        super(RoverProblem, self).__init__(inicial)
+        super(planear_rover, self).__init__(inicial)
 
     # is_goal
     def is_goal(self, state):
@@ -208,7 +208,32 @@ class RoverProblem(SearchProblem):
    
     # cost
     def cost(self, state, action, result):
-        return null
+
+        tipo_accion, parametro = action
+
+        # moverse
+        if tipo_accion == "moverse":
+            return 1
+        
+        # sobremarcha
+        elif tipo_accion == "sobremarcha":
+            return 1
+        
+        # equipar
+        elif tipo_accion == "equipar":
+            return 3
+        
+        # recolectar
+        elif tipo_accion == "recolectar":
+            return 2
+        
+        # depositar
+        elif tipo_accion == "depositar":
+            return 1
+        
+        # recargar
+        elif tipo_accion == "recargar":
+            return 4
 
     # manhattan 
     def manhattan(pos1, pos2):
@@ -220,4 +245,33 @@ class RoverProblem(SearchProblem):
     
     # heuristic
     def heuristic(self, state):
-        return null
+        
+        bateria, posicion, carga, taladro, igneas, sedimentarias = state
+
+        muestras_restantes = len(igneas) + len(sedimentarias)
+        distancias = []
+
+        if muestras_restantes == 0:
+            return 0
+        
+        elif muestras_restantes > 0:
+            muestras = list(igneas) + list(sedimentarias)
+            for m in muestras:
+                distancia = self.manhattan(posicion, m)
+                distancias.append(distancia)
+            return max(distancias)    
+
+    def main():
+
+        acciones = planear_rover(
+            rover_inicio=(0, 0),
+            bateria_inicial=20,
+            zonas_sombra=[(0, 1), (0, 2)],
+            muestras_igneas=[(1, 1), (1, 2)],
+            muestras_sedimentarias=[(2, 3)],
+        )
+
+        print(acciones)
+
+    if __name__ == "__main__":
+        main()
