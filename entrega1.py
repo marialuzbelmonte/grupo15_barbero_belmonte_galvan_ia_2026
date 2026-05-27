@@ -1,8 +1,7 @@
-import datetime
 from simpleai.search import astar, SearchProblem
 from simpleai.search.viewers import BaseViewer
 
-class planear_rover(SearchProblem):
+class ProblemaRover(SearchProblem):
     '''
     Tenemos que almacenar en el estado la siguiente información: batería, posición del rover, carga, herramienta, muestras por recoger 
     (igneas y sedimentarias).
@@ -80,6 +79,7 @@ class planear_rover(SearchProblem):
 
     Utilizar algún agente o editor de código asistido por IA (como Claude Code, Codex, Copilot, etc) para resolver el problema: presentarle la consigna y pedirle que la resuelva utilizando SimpleAI. Luego comparar la solución que les dio con la que ustedes implementaron, y analizar las diferencias entre ambas: qué diferencias hay en el enfoque (estado, acciones, heurística, etc)? Logró resolverlo pasando todos los tests? Cómo se comparan en pérformance? Escribir las conclusiones en no más de 4 párrafos.
     '''
+
     # todas las coordenadas son en formato (fila, columna)
     def __init__(self, rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
 
@@ -97,7 +97,7 @@ class planear_rover(SearchProblem):
             tuple(muestras_sedimentarias),
         )
 
-        super(planear_rover, self).__init__(inicial)
+        super(ProblemaRover, self).__init__(inicial)
 
     # is_goal
     def is_goal(self, state):
@@ -111,6 +111,10 @@ class planear_rover(SearchProblem):
         bateria, posicion, carga, taladro, igneas, sedimentarias = state
 
         fila, columna = posicion
+
+        if len(igneas) + len(sedimentarias) == 0:
+
+            return tuple(acciones)
 
         # movimientos normales
         movimientos = [("moverse", (fila-1, columna)), 
@@ -161,7 +165,7 @@ class planear_rover(SearchProblem):
             if bateria < self.bateria_maxima:
                 acciones.append(("recargar", None))
 
-        return acciones
+        return tuple(acciones)
 
     # result
     def result(self, state, action):
@@ -210,6 +214,7 @@ class planear_rover(SearchProblem):
     def cost(self, state, action, result):
 
         tipo_accion, parametro = action
+        bateria, posicion, carga, taladro, igneas, sedimentarias = state
 
         # moverse
         if tipo_accion == "moverse":
@@ -229,20 +234,24 @@ class planear_rover(SearchProblem):
         
         # depositar
         elif tipo_accion == "depositar":
-            return 1
+            
+            if len(carga) == 2:
+                return 2
+            else:
+                return 1
         
         # recargar
         elif tipo_accion == "recargar":
             return 4
-
+    
     # manhattan 
-    def manhattan(pos1, pos2):
+    def manhattan(self, pos1, pos2):
 
         x1, y1 = pos1
         x2, y2 = pos2
 
         return abs(x2 - x1) + abs(y2 - y1)
-    
+
     # heuristic
     def heuristic(self, state):
         
@@ -259,19 +268,39 @@ class planear_rover(SearchProblem):
             for m in muestras:
                 distancia = self.manhattan(posicion, m)
                 distancias.append(distancia)
-            return max(distancias)    
+                tiempo_min = max(distancias) * 0.5 + 3
+            return tiempo_min
 
-    def main():
+def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
 
-        acciones = planear_rover(
-            rover_inicio=(0, 0),
-            bateria_inicial=20,
-            zonas_sombra=[(0, 1), (0, 2)],
-            muestras_igneas=[(1, 1), (1, 2)],
-            muestras_sedimentarias=[(2, 3)],
-        )
+    problema = ProblemaRover(
+        rover_inicio=rover_inicio,
+        bateria_inicial=bateria_inicial,
+        zonas_sombra=zonas_sombra,
+        muestras_igneas=muestras_igneas,
+        muestras_sedimentarias=muestras_sedimentarias,
+    )
 
-        print(acciones)
+    result = astar(problema)
 
-    if __name__ == "__main__":
-        main()
+    acciones = []
+
+    for action, state in result.path():
+        if action is not None:
+            acciones.append(action)
+
+    return acciones
+
+if __name__ == "__main__":
+    
+    acciones = planear_rover(
+        rover_inicio=(0, 0),
+        bateria_inicial=20,
+        zonas_sombra=[(0, 1), (0, 2)],
+        muestras_igneas=[(1, 1), (1, 2)],
+        muestras_sedimentarias=[(2, 3)],
+    )
+
+    print("Acciones a realizar:")
+    for i, accion in enumerate(acciones):
+        print(f"{i+1}. {accion}")
