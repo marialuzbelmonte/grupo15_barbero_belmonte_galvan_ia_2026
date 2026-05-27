@@ -1,5 +1,5 @@
 from simpleai.search import astar, SearchProblem
-from simpleai.search.viewers import BaseViewer
+from simpleai.search.viewers import ConsoleViewer
 
 class ProblemaRover(SearchProblem):
     '''
@@ -112,7 +112,7 @@ class ProblemaRover(SearchProblem):
 
         fila, columna = posicion
 
-        if len(igneas) + len(sedimentarias) == 0:
+        if len(igneas) + len(sedimentarias) == 0 and len(carga) == 0:
 
             return tuple(acciones)
 
@@ -139,10 +139,10 @@ class ProblemaRover(SearchProblem):
         # equipar taladro
         if bateria > 1:
             
-            if taladro != "termico":
+            if taladro != "termico" and posicion in igneas:
                 acciones.append(("equipar", "termico"))
 
-            if taladro != "percusion":
+            if taladro != "percusion" and posicion in sedimentarias:
                 acciones.append(("equipar", "percusion"))
         
         # recolectar
@@ -165,7 +165,7 @@ class ProblemaRover(SearchProblem):
             if bateria < self.bateria_maxima:
                 acciones.append(("recargar", None))
 
-        return tuple(acciones)
+        return acciones
 
     # result
     def result(self, state, action):
@@ -194,11 +194,19 @@ class ProblemaRover(SearchProblem):
             tipo_muestra = parametro
             if tipo_muestra == "ignea":
                 nueva_carga = carga + ("ignea",)
-                nuevas_igneas = tuple(m for m in igneas if m != posicion)
+
+                lista_igneas = list(igneas)
+                lista_igneas.remove(posicion)
+                nuevas_igneas = tuple(lista_igneas)
+
                 return (bateria - 3, posicion, nueva_carga, taladro, nuevas_igneas, sedimentarias)
             elif tipo_muestra == "sedimentaria":
                 nueva_carga = carga + ("sedimentaria",)
-                nuevas_sedimentarias = tuple(m for m in sedimentarias if m != posicion)
+
+                lista_sedimentarias = list(sedimentarias)
+                lista_sedimentarias.remove(posicion)
+                nuevas_sedimentarias = tuple(lista_sedimentarias)
+
                 return (bateria - 3, posicion, nueva_carga, taladro, igneas, nuevas_sedimentarias)
 
         # depositar
@@ -259,17 +267,30 @@ class ProblemaRover(SearchProblem):
 
         muestras_restantes = len(igneas) + len(sedimentarias)
         distancias = []
-
-        if muestras_restantes == 0:
-            return 0
+        tiempo = 0
         
-        elif muestras_restantes > 0:
+        if muestras_restantes > 0:
+
+            tiempo_taladro = 0
+
+            if taladro == "termico" and len(sedimentarias) > 0:
+                tiempo_taladro = 3
+            elif taladro == "percusion" and len(igneas) > 0:
+                tiempo_taladro = 3
+            elif taladro is None:
+                tiempo_taladro = 3
+
             muestras = list(igneas) + list(sedimentarias)
+            tiempo_recolectar = muestras_restantes * 2
+            tiempo_depositar = muestras_restantes 
+
             for m in muestras:
                 distancia = self.manhattan(posicion, m)
                 distancias.append(distancia)
-                tiempo_min = max(distancias) * 0.5 + 3
-            return tiempo_min
+            
+            tiempo = max(distancias) * 0.5 + tiempo_recolectar + tiempo_depositar + tiempo_taladro
+        
+        return tiempo
 
 def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
 
@@ -281,26 +302,9 @@ def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, 
         muestras_sedimentarias=muestras_sedimentarias,
     )
 
-    result = astar(problema)
+    result = astar(problema, graph_search=True)
 
-    acciones = []
-
-    for action, state in result.path():
-        if action is not None:
-            acciones.append(action)
-
-    return acciones
-
-if __name__ == "__main__":
+    if result is None:
+        return "No se encontró solución"
     
-    acciones = planear_rover(
-        rover_inicio=(0, 0),
-        bateria_inicial=20,
-        zonas_sombra=[(0, 1), (0, 2)],
-        muestras_igneas=[(1, 1), (1, 2)],
-        muestras_sedimentarias=[(2, 3)],
-    )
-
-    print("Acciones a realizar:")
-    for i, accion in enumerate(acciones):
-        print(f"{i+1}. {accion}")
+    return [accion for accion, _ in result.path() if accion is not None]
