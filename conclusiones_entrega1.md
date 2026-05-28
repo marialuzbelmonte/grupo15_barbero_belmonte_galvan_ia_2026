@@ -1,0 +1,9 @@
+Nuestro código versus el de la IA:
+
+La inteligencia artificial que utilizamos para resolver el punto 3 fue Gemini de Google, para la cual contamos con la versión paga. Al ejecutar el test sobre el código obtenido, ninguno de los testcase pasó, dando el corte a los 1,56 segundos. Con lo que respecta a nuestro código, pasa todos los tests en 4,09 minutos.
+
+Observando el código obtenido, podemos ver que la primera gran diferencia es la forma en la que se planteó el estado. La IA usó frozensets (versión de set que desconocíamos), mientras que nosotras usamos tuplas. Nuestra implementación resultó más fácil de leer y evita problemas de compatibilidad que la IA no tuvo en cuenta.
+
+Por otro lado, nosotras realizamos algunas restricciones en cuanto a las acciones que Gemini no. La IA permite moverse a cualquier lado sin mirar el mapa o cambiar el taladro en cualquier momento, por ejemplo. En nuestro código, filtramos las acciones, sólo permitiendo equipar el taladro si se encuentra sobre la piedra a extraer y controlando que la batería nunca llegue a 0, como fue mencionado en el enunciado. Esto permitió limpiar el árbol de búsqueda.
+
+Por último, la clave del éxito de nuestro algoritmo fue la definición de la heurística. Al definirla, tuvimos en cuenta las distancias usando Manhattan adaptada al override y sumamos los tiempos reales de recolección, depósito y cambio de taladros, según el estado del mapa. Al ser tan precisa, pero admisible, el algoritmo encuentra la solución en menos tiempo en comparación al código de la IA, que presentó una heurística con resultados bajos, sin mirar las distancias.

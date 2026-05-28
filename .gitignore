@@ -1,0 +1,12 @@
+# Caché de Python
+_pycache_/
+*.pyc
+
+# Caché de testing
+.pytest_cache/
+
+# Entorno virtual (tu carpeta 'v')
+v/
+Lib/
+Scripts/
+pyvenv.cfg
